@@ -1,0 +1,222 @@
+---
+title: "Missouri River Basin Rasters"
+author: "Mandy Liesch"
+date: "8/16/2022"
+output:
+  html_document:
+    toc: true
+    code_folding: hide
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+# Introduction
+
+## R Packages
+
+```{r}
+#Load the required packages
+library(sp)
+library(sf)
+library(terra)
+library(tidyverse)
+library(tidyterra)
+library(raster)
+library(rasterVis)
+library(rgdal)
+library(ggplot2)
+```
+
+## Raster Sources
+
+There are several different rasters in this Missouri River Basin Analysis: 
+
+### Soil Carbon Rasters: 100 cm
+
+- Original GCAM Estimates:  (recreated with the inital .csv file and the land use in house raster)  
+- Harmonized World Soils Database: The 100 cm raster was created with the topsoil (30 cm) and subsoil (70 cm) rasters from the [Regridded Harmonized World Soil Database v1.2](https://daac.ornl.gov/SOILS/guides/HWSD.html). *Find Resolution*   
+- Soil Grids 2017 Raster: Derived with random forest machine learning algorithms [Hengel et al., 2017](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169748), downloaded the 100 cm soil carbon stocks 250 m resoultion.   
+
+### Soil Carbon Rasters: 30 cm
+
+- GCAM 30 cm estimate: The ratio of the 30 cm/100 cm HWSD raster was used to multiply with the 100 cm GCAM raster to calculate the approximate level of soil carbon at 30 cm level (for comparison)  
+
+- Harmonized World Soils Database: The topsoil (30 cm) raster from the [Regridded Harmonized World Soil Database v1.2](https://daac.ornl.gov/SOILS/guides/HWSD.html). *Find Resolution*    
+- SoilGrids 2017 30 cm raster: Derived with random forest machine learning algorithms [Hengel et al., 2017](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169748), downloaded the 30 cm soil carbon stocks 250 m resoultion.   
+- FAO Glosis 2018 Raster: From the [FAO Data](https://www.fao.org/soils-portal/data-hub/soil-maps-and-databases/global-soil-organic-carbon-map-gsocmap/en/), and is a fusion of many different sytles, with in country data, filled in with soilgrids 2017 for countries that provided no data.  
+- SoilGrids 2020 30 cm raster: downloaded using the [WebDav Protocol](https://www.isric.org/explore/soilgrids/soilgrids-access)  
+
+### Vegetation Rasters
+
+- Initial GCAM Vegetation Estimates
+- Updated Vegetation Estimates [Spawn et al., 2020]()
+- Modis Derived GPP and NPP
+
+
+### Covariates and Sources
+
+- In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Grassland Estimates. 300 m x 300 m resolution.   
+- Cropland Land Use Change from 2000-2019, derived from [WRI]() Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
+- Soil Heterotrophic Respiration Levels (from the Bond Lambert equations), Gridded representation from the [Stell et al., 2021](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=1928) database, converted into Mg C/ha/year.  
+- Soil Temperature Variables: [Lembrechts et al. 2021](https://zenodo.org/record/4558732#.YwjH3HbMLIV)  
+
+
+```{r}
+#Direct R to the raster directory
+setwd("C:/Users/aliesch/OneDrive - Environmental Protection Agency (EPA)/Desktop/Intermediate Rasters")
+
+#Load in the In House Categorical Land Use Raster
+landUse<-rast("Reprojected_LandUseRaster_igh.tif")
+
+#Load in the WRI Land Use Cropland Change
+croplandROC<-rast("cropland_Reproj.tif")
+
+#Load in the Bond Lam Soil Heterotrophic Respiration
+bondLam<-rast("bondLamUnit_Reproj.tif" )
+
+#Soil Climate Variables
+#https://onlinelibrary.wiley.com/doi/10.1111/gcb.16060 paper
+#https://zenodo.org/record/4558732#.YwjH3HbMLIV
+
+
+#All 30 cm Rasters
+
+#Load the GCAM approximation of Soil Carbon Rasters
+GCAM0_30cm<-rast("GCAM0_30cm.tif")
+
+#Load the FAO Glosis Raster
+FAO_0_30cm<-rast("Reproject_FAO_30cm.tif")
+
+#Load the Surface Harmonized World Soil Database
+HWSD0_30cm<-rast("HWSD_0-30_Reproj.tif")
+
+#Load the Soil Grids 2017 Data
+SG17_0_30cm<-rast("SG2017_0_30cm_Reproj.tif")
+
+#Load the Soil Grids 2020 Data
+SG20_0_30cm<-rast("SoilGrids2020_0-30.tif")
+
+#Load the 1800s Raster
+soc1800_30cm<-rast('soc1800_30cm_Reproj.tif')
+
+
+#All 3 100 cm Rasters
+
+HWSD0_100cm<-rast("HWSD100cm.tif")
+
+GCAM0_100cm<-rast("GCAM_SOC_Raster1.tif")
+
+SG17_0_100cm<-rast('SG2017_0_100cm_Reproj.tif')
+```
+
+## Shapefile Setup
+```{r, results=FALSE}
+setwd("C:/Users/aliesch/OneDrive - Environmental Protection Agency (EPA)/Desktop/Boundaries")
+
+#Read in the Region/Basin Shapefile
+BasinShapeFile<-st_read("reg_basin_boundaries_moirai_landcells_3p1_0p5arcmin.shp") 
+
+#reproject the Basin Shape File to align with the soil carbon raster
+BasinShapeFile_igh<- st_transform(BasinShapeFile, CRS("+proj=igh +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"))
+
+#Use the dplyr package and the tidyverse notation to create the polygons to dissolve into. 
+
+Basin.ID <- BasinShapeFile_igh %>% 
+    group_by(basin_id) %>% 
+    summarise() 
+
+```
+
+# Results
+
+## Missouri Basin Raster Setup
+```{r}
+Missouri <- Basin.ID %>%
+  filter(basin_id == 223)
+
+MissouriSV<-vect(Missouri)
+
+cMissouri_cropland <- crop(croplandROC, MissouriSV)
+Missouri_cropland<- mask(cMissouri_cropland, MissouriSV)
+
+cMissouri_LUC<-crop(landUse, MissouriSV)
+Missouri_LUC<-mask(cMissouri_LUC, MissouriSV)
+
+cMissouri_bondLam<-crop(bondLam, MissouriSV)
+Missouri_bondLam<-mask(cMissouri_bondLam, MissouriSV)
+
+cMissouri_GCAM_0_30 <- crop(GCAM0_30cm, MissouriSV)
+Missouri_GCAM_0_30 <- mask(cMissouri_GCAM_0_30, MissouriSV)
+
+cMissouri_FAO_0_30 <- crop(FAO_0_30cm, MissouriSV)
+Missouri_FAO_0_30 <- mask(cMissouri_FAO_0_30, MissouriSV)
+
+new.Missouri_FAO_0_30 <- clamp(Missouri_FAO_0_30,upper=200,values=F)
+
+Missouri_FAO_0_30 <-new.Missouri_FAO_0_30 
+
+cMissouri_HWSD_0_30 <- crop(HWSD0_30cm, MissouriSV)
+Missouri_HWSD_0_30 <- mask(cMissouri_HWSD_0_30, MissouriSV)
+
+cMissouri_SG17_0_30 <- crop(SG17_0_30cm, MissouriSV)
+Missouri_SG17_0_30 <- mask(cMissouri_SG17_0_30, MissouriSV)
+
+new.Missouri_SG17_0_30 <- clamp(Missouri_SG17_0_30,upper=200,values=F)
+
+Missouri_SG17_0_30<- new.Missouri_SG17_0_30 
+
+cMissouri_soc1800_0_30<- crop(soc1800_30cm, MissouriSV)
+Missouri_soc1800_0_30<-mask(cMissouri_soc1800_0_30)
+
+cMissouri_SG20_0_30 <- crop(SG20_0_30cm, MissouriSV)
+Missouri_SG20_0_30 <- mask(cMissouri_SG20_0_30, MissouriSV)
+```
+
+### Missouri River Land Use
+
+```{r}
+#https://rdrr.io/cran/terra/man/factors.html
+
+cls <- data.frame(id=1:8, cover=c("Cropland", "Forest", "Grassland", "Shrubland", "Urban", "Rock/Ice/Desert",  "Tundra", "Pasture"))
+
+levels(Missouri_LUC) <- cls
+
+cols <- c("Cropland" = "yellow", "Forest" = "darkgreen", "Grassland" = "green", "Shrubland" = "orange", "Urban"='red', "Rock/Ice/Desert"='grey', "Tundra"='white', "Pasture"='lightgreen')
+
+plet(Missouri_LUC, main="Land Use", col=cols, tiles="Streets")
+
+```
+
+## Raster Stacking
+```{r}
+SOC30cm_Stack<-c(Missouri_GCAM_0_30, Missouri_FAO_0_30, Missouri_HWSD_0_30, Missouri_SG17_0_30, Missouri_SG20_0_30, Missouri_soc1800_0_30)
+
+names(SOC30cm_Stack) <- c("GCAM 30 cm", "FAO Glosis 30 cm", "HWSD 30 cm", "SoilGrids 2017 30 cm", "SoilGrids 2020 30 cm", "Intial 1800 Soil Carbon 30 cm")
+
+#https://rdrr.io/cran/terra/man/plet.html
+plet(SOC30cm_Stack, 1:5, tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
+
+NOGCAM_SOC30cm_Stack<-c(Missouri_FAO_0_30, Missouri_HWSD_0_30, Missouri_SG17_0_30, Missouri_SG20_0_30)
+
+maxRaster<-max(NOGCAM_SOC30cm_Stack)
+
+minRaster<-min(NOGCAM_SOC30cm_Stack)
+
+rangeRaster<-maxRaster-minRaster
+
+new.rangeRaster<- clamp(rangeRaster,upper=100,values=F)
+
+plet(new.rangeRaster, main="Soil Carbon\n Range", tiles="Streets", collapse=FALSE) |> lines(MissouriSV, lwd=2)
+
+plet(Missouri_bondLam, main="Heterotropic\n Soil Resp\n Mg C/ha/yr", tiles="Streets")
+
+plet(Missouri_cropland, main="Percent\n Cropland\n Change\n 2000-2019", col="viridis", tiles="Streets")
+
+```
+
+
+#Respiration links https://daac.ornl.gov/CMS/guides/CMS_Global_Soil_Respiration.html
+
