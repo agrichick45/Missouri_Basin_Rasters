@@ -57,10 +57,11 @@ There are several different rasters in this Missouri River Basin Analysis:
 
 ```{r}
 #Direct R to the raster directory
-setwd("C:/Users/aliesch/OneDrive - Environmental Protection Agency (EPA)/Desktop/Intermediate Rasters")
 
 #Load in the In House Categorical Land Use Raster
-landUse<-rast("Reprojected_LandUseRaster_igh.tif")
+
+
+MissouriSV<-vect("missouri_river_basin.shp")
 
 #Load in the WRI Land Use Cropland Change
 croplandROC<-rast("cropland_Reproj.tif")
@@ -90,27 +91,16 @@ SG17_0_30cm<-rast("SG2017_0_30cm_Reproj.tif")
 #Load the Soil Grids 2020 Data
 SG20_0_30cm<-rast("SoilGrids2020_0-30.tif")
 
-#Load the 1800s Raster
-soc1800_30cm<-rast('soc1800_30cm_Reproj.tif')
+
 
 
 ```
 
 ## Shapefile Setup
 ```{r, results=FALSE}
-setwd("C:/Users/aliesch/OneDrive - Environmental Protection Agency (EPA)/Desktop/Boundaries")
 
-#Read in the Region/Basin Shapefile
-BasinShapeFile<-st_read("reg_basin_boundaries_moirai_landcells_3p1_0p5arcmin.shp") 
+Missouri_LUC<-rast("Rasters/Missouri_LUC.tif")
 
-#reproject the Basin Shape File to align with the soil carbon raster
-BasinShapeFile_igh<- st_transform(BasinShapeFile, CRS("+proj=igh +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"))
-
-#Use the dplyr package and the tidyverse notation to create the polygons to dissolve into. 
-
-Basin.ID <- BasinShapeFile_igh %>% 
-    group_by(basin_id) %>% 
-    summarise() 
 
 ```
 
@@ -118,16 +108,12 @@ Basin.ID <- BasinShapeFile_igh %>%
 
 ## Missouri Basin Raster Setup
 ```{r}
-Missouri <- Basin.ID %>%
-  filter(basin_id == 223)
 
-MissouriSV<-vect(Missouri)
+
 
 cMissouri_cropland <- crop(croplandROC, MissouriSV)
 Missouri_cropland<- mask(cMissouri_cropland, MissouriSV)
 
-cMissouri_LUC<-crop(landUse, MissouriSV)
-Missouri_LUC<-mask(cMissouri_LUC, MissouriSV)
 
 cMissouri_bondLam<-crop(bondLam, MissouriSV)
 Missouri_bondLam<-mask(cMissouri_bondLam, MissouriSV)
