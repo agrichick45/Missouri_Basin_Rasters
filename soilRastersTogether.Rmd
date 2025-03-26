@@ -26,7 +26,6 @@ library(tidyverse)
 library(tidyterra)
 library(raster)
 library(rasterVis)
-library(rgdal)
 library(ggplot2)
 ```
 
@@ -34,16 +33,9 @@ library(ggplot2)
 
 There are several different rasters in this Missouri River Basin Analysis: 
 
-### Soil Carbon Rasters: 100 cm
-
-- Original GCAM Estimates:  (recreated with the inital .csv file and the land use in house raster)  
-- Harmonized World Soils Database: The 100 cm raster was created with the topsoil (30 cm) and subsoil (70 cm) rasters from the [Regridded Harmonized World Soil Database v1.2](https://daac.ornl.gov/SOILS/guides/HWSD.html). *Find Resolution*   
-- Soil Grids 2017 Raster: Derived with random forest machine learning algorithms [Hengel et al., 2017](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169748), downloaded the 100 cm soil carbon stocks 250 m resoultion.   
-
 ### Soil Carbon Rasters: 30 cm
 
-- GCAM 30 cm estimate: The ratio of the 30 cm/100 cm HWSD raster was used to multiply with the 100 cm GCAM raster to calculate the approximate level of soil carbon at 30 cm level (for comparison)  
-
+- GCAM 30 cm estimate:  Original GCAM Estimates:  (recreated with the inital .csv file and the land use in house raster). The ratio of the 30 cm/100 cm HWSD raster was used to multiply with the 100 cm GCAM raster to calculate the approximate level of soil carbon at 30 cm level (for comparison)  
 - Harmonized World Soils Database: The topsoil (30 cm) raster from the [Regridded Harmonized World Soil Database v1.2](https://daac.ornl.gov/SOILS/guides/HWSD.html). *Find Resolution*    
 - SoilGrids 2017 30 cm raster: Derived with random forest machine learning algorithms [Hengel et al., 2017](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169748), downloaded the 30 cm soil carbon stocks 250 m resoultion.   
 - FAO Glosis 2018 Raster: From the [FAO Data](https://www.fao.org/soils-portal/data-hub/soil-maps-and-databases/global-soil-organic-carbon-map-gsocmap/en/), and is a fusion of many different sytles, with in country data, filled in with soilgrids 2017 for countries that provided no data.  
@@ -52,7 +44,7 @@ There are several different rasters in this Missouri River Basin Analysis:
 ### Vegetation Rasters
 
 - Initial GCAM Vegetation Estimates
-- Updated Vegetation Estimates [Spawn et al., 2020]()
+- Updated Vegetation Estimates [Spawn et al., 2020]() (Not used for this analysis)
 - Modis Derived GPP and NPP
 
 
@@ -60,8 +52,7 @@ There are several different rasters in this Missouri River Basin Analysis:
 
 - In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Grassland Estimates. 300 m x 300 m resolution.   
 - Cropland Land Use Change from 2000-2019, derived from [WRI]() Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
-- Soil Heterotrophic Respiration Levels (from the Bond Lambert equations), Gridded representation from the [Stell et al., 2021](https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=1928) database, converted into Mg C/ha/year.  
-- Soil Temperature Variables: [Lembrechts et al. 2021](https://zenodo.org/record/4558732#.YwjH3HbMLIV)  
+
 
 
 ```{r}
@@ -103,13 +94,6 @@ SG20_0_30cm<-rast("SoilGrids2020_0-30.tif")
 soc1800_30cm<-rast('soc1800_30cm_Reproj.tif')
 
 
-#All 3 100 cm Rasters
-
-HWSD0_100cm<-rast("HWSD100cm.tif")
-
-GCAM0_100cm<-rast("GCAM_SOC_Raster1.tif")
-
-SG17_0_100cm<-rast('SG2017_0_100cm_Reproj.tif')
 ```
 
 ## Shapefile Setup
