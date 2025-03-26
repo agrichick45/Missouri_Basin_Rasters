@@ -27,6 +27,8 @@ library(tidyterra)
 library(raster)
 library(rasterVis)
 library(ggplot2)
+library(leaflet)
+library(RColorBrewer)
 ```
 
 ## Raster Sources
@@ -50,140 +52,85 @@ There are several different rasters in this Missouri River Basin Analysis:
 
 ### Covariates and Sources
 
-- In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Grassland Estimates. 300 m x 300 m resolution.   
+- In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Pasture Estimates. 300 m x 300 m resolution.   
 - Cropland Land Use Change from 2000-2019, derived from [WRI](https://glad.umd.edu/dataset/croplands) Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
 
 
-
-```{r}
-#Direct R to the raster directory
-
-#Load in the In House Categorical Land Use Raster
-
-
-MissouriSV<-vect("missouri_river_basin.shp")
-
-#Load in the WRI Land Use Cropland Change
-croplandROC<-rast("cropland_Reproj.tif")
-
-#Load in the Bond Lam Soil Heterotrophic Respiration
-#bondLam<-rast("bondLamUnit_Reproj.tif" )
-
-#Soil Climate Variables
-#https://onlinelibrary.wiley.com/doi/10.1111/gcb.16060 paper
-#https://zenodo.org/record/4558732#.YwjH3HbMLIV
-
-
-#All 30 cm Rasters
-
-#Load the GCAM approximation of Soil Carbon Rasters
-GCAM0_30cm<-rast("GCAM0_30cm.tif")
-
-#Load the FAO Glosis Raster
-FAO_0_30cm<-rast("Reproject_FAO_30cm.tif")
-
-#Load the Surface Harmonized World Soil Database
-HWSD0_30cm<-rast("HWSD_0-30_Reproj.tif")
-
-#Load the Soil Grids 2017 Data
-SG17_0_30cm<-rast("SG2017_0_30cm_Reproj.tif")
-
-#Load the Soil Grids 2020 Data
-SG20_0_30cm<-rast("SoilGrids2020_0-30.tif")
-
-
-
-
-```
-
 ## Shapefile Setup
 ```{r, results=FALSE}
+MissouriSV<-vect("missouri_river_basin.shp")
 
+#Load in the In House Categorical Land Use Raster
 Missouri_LUC<-rast("Rasters/Missouri_LUC.tif")
+Missouri_LUC_84<-project(Missouri_LUC, 'EPSG:4326',  method = "near")
+levels(Missouri_LUC_84) <- data.frame(id=c(1,2,3,4, 5, 6, 8), cover=c("Cropland", "Forest", "Grassland",  "Shrubland", "Urban","Rock/Desert", "Pasture"))
+
+#Load in the WRI Land Use Cropland Change
+Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
+Missouri_crop_gain_84<-project(Missouri_crop_gain, 'EPSG:4326')
+
+Missouri_crop_loss<-rast("Rasters/Missouri_CropLoss.tif")
+
+#All 30 cm Rasters
+FAO<-rast("Rasters/Missouri_FAO.tif")
+Missouri_FAO<-project(FAO, 'EPSG:4326')
+Missouri_FAO<-classify(Missouri_FAO, cbind(150, Inf, 150))
+
+GCAM<-rast("Rasters/Missouri_GCAM.tif")
+Missouri_GCAM<-project(GCAM, 'EPSG:4326')
+Missouri_GCAM<-ifel(Missouri_GCAM > 97, 150, Missouri_GCAM)
+
+HWSD<-rast("Rasters/Missouri_HWSD.tif")
+Missouri_HWSD<-project(HWSD, 'EPSG:4326')
+Missouri_HWSD<-ifel(Missouri_HWSD > 114, 150, Missouri_HWSD)
+
+SG17<-rast("Rasters/Missouri_SG17.tif")
+Missouri_SG17<-project(SG17, 'EPSG:4326')
+Missouri_SG17<-classify(Missouri_SG17, cbind(150, Inf, 150))
+
+SG20<-rast("Rasters/Missouri_SG20.tif")
+Missouri_SG20<-project(SG20, 'EPSG:4326')
+Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 
 
 ```
 
 # Results
 
-## Missouri Basin Raster Setup
+## Missouri Basin Rasters
+
+### Cropland Gains
+
 ```{r}
 
 
+plet(Missouri_crop_gain_84, main="Percent\n Cropland\n Added\n 2000-2019", col=map.pal("reds"), tiles="Streets") |> lines(MissouriSV, lwd=2)
 
-cMissouri_cropland <- crop(croplandROC, MissouriSV)
-Missouri_cropland<- mask(cMissouri_cropland, MissouriSV)
-
-
-cMissouri_bondLam<-crop(bondLam, MissouriSV)
-Missouri_bondLam<-mask(cMissouri_bondLam, MissouriSV)
-
-cMissouri_GCAM_0_30 <- crop(GCAM0_30cm, MissouriSV)
-Missouri_GCAM_0_30 <- mask(cMissouri_GCAM_0_30, MissouriSV)
-
-cMissouri_FAO_0_30 <- crop(FAO_0_30cm, MissouriSV)
-Missouri_FAO_0_30 <- mask(cMissouri_FAO_0_30, MissouriSV)
-
-new.Missouri_FAO_0_30 <- clamp(Missouri_FAO_0_30,upper=200,values=F)
-
-Missouri_FAO_0_30 <-new.Missouri_FAO_0_30 
-
-cMissouri_HWSD_0_30 <- crop(HWSD0_30cm, MissouriSV)
-Missouri_HWSD_0_30 <- mask(cMissouri_HWSD_0_30, MissouriSV)
-
-cMissouri_SG17_0_30 <- crop(SG17_0_30cm, MissouriSV)
-Missouri_SG17_0_30 <- mask(cMissouri_SG17_0_30, MissouriSV)
-
-new.Missouri_SG17_0_30 <- clamp(Missouri_SG17_0_30,upper=200,values=F)
-
-Missouri_SG17_0_30<- new.Missouri_SG17_0_30 
-
-cMissouri_soc1800_0_30<- crop(soc1800_30cm, MissouriSV)
-Missouri_soc1800_0_30<-mask(cMissouri_soc1800_0_30)
-
-cMissouri_SG20_0_30 <- crop(SG20_0_30cm, MissouriSV)
-Missouri_SG20_0_30 <- mask(cMissouri_SG20_0_30, MissouriSV)
 ```
 
 ### Missouri River Land Use
 
 ```{r}
 #https://rdrr.io/cran/terra/man/factors.html
+plet(Missouri_LUC_84, main="Land Use\n Category, 2015", col=c("#FED439FF", "#075149FF", "#46732EFF",  "#F05C3BFF", "#C80813FF", "#8A9197FF", "#FD8CC1FF"), tiles="Streets") |> lines(MissouriSV, lwd=2)
 
-cls <- data.frame(id=1:8, cover=c("Cropland", "Forest", "Grassland", "Shrubland", "Urban", "Rock/Ice/Desert",  "Tundra", "Pasture"))
-
-levels(Missouri_LUC) <- cls
-
-cols <- c("Cropland" = "yellow", "Forest" = "darkgreen", "Grassland" = "green", "Shrubland" = "orange", "Urban"='red', "Rock/Ice/Desert"='grey', "Tundra"='white', "Pasture"='lightgreen')
-
-plet(Missouri_LUC, main="Land Use", col=cols, tiles="Streets")
 
 ```
 
-## Raster Stacking
+### Soil Carbon Rasters
 ```{r}
-SOC30cm_Stack<-c(Missouri_GCAM_0_30, Missouri_FAO_0_30, Missouri_HWSD_0_30, Missouri_SG17_0_30, Missouri_SG20_0_30, Missouri_soc1800_0_30)
+SOC30cm_Stack<-c(Missouri_FAO, Missouri_GCAM, Missouri_HWSD, Missouri_SG17, Missouri_SG20) 
 
-names(SOC30cm_Stack) <- c("GCAM 30 cm", "FAO Glosis 30 cm", "HWSD 30 cm", "SoilGrids 2017 30 cm", "SoilGrids 2020 30 cm", "Intial 1800 Soil Carbon 30 cm")
+names(SOC30cm_Stack) <- c( "FAO Glosis 30 cm", "GCAM 30 cm", "HWSD 30 cm", "SoilGrids 2017 30 cm", "SoilGrids 2020 30 cm")
 
 #https://rdrr.io/cran/terra/man/plet.html
-plet(SOC30cm_Stack, 1:5, tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
+plet(SOC30cm_Stack, 1, tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
 
-NOGCAM_SOC30cm_Stack<-c(Missouri_FAO_0_30, Missouri_HWSD_0_30, Missouri_SG17_0_30, Missouri_SG20_0_30)
+plot(SOC30cm_Stack, 2:5)
 
-maxRaster<-max(NOGCAM_SOC30cm_Stack)
 
-minRaster<-min(NOGCAM_SOC30cm_Stack)
 
-rangeRaster<-maxRaster-minRaster
 
-new.rangeRaster<- clamp(rangeRaster,upper=100,values=F)
-
-plet(new.rangeRaster, main="Soil Carbon\n Range", tiles="Streets", collapse=FALSE) |> lines(MissouriSV, lwd=2)
-
-plet(Missouri_bondLam, main="Heterotropic\n Soil Resp\n Mg C/ha/yr", tiles="Streets")
-
-plet(Missouri_cropland, main="Percent\n Cropland\n Change\n 2000-2019", col="viridis", tiles="Streets")
 
 ```
 

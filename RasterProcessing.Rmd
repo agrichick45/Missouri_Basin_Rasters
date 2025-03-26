@@ -1,0 +1,80 @@
+---
+title: "RasterProcessing"
+author: "Mandy Liesch"
+date: "2025-03-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+landUse<-rast("Reprojected_LandUseRaster_igh.tif")
+
+netCropGain<-rast("Global_cropland_3km_netgain.tif")
+
+netCropLoss<-rast("Global_cropland_3km_netloss.tif")
+
+GCAM0_30cm<-rast("GCAM0_30cm.tif")
+
+HWSD0_30cm<-rast("HWSD_0-30_Reproj.tif")
+
+FAO_0_30cm<-rast("Reproject_FAO_30cm.tif")
+
+SG17_0_30cm<-rast("SG2017_0_30cm_Reproj.tif")
+
+SG20_0_30cm<-rast("SoilGrids2020_0-30.tif")
+
+MissouriSV<-vect("missouri_river_basin.shp")
+
+
+```
+
+```{r}
+Missouri<-project(MissouriSV, landUse)
+
+CropGain <-project(netCropGain, Missouri)
+
+cMissouri_NetGain<-crop(CropGain, Missouri)
+Missouri_NetGain<-mask(cMissouri_NetGain, Missouri)
+
+
+writeRaster(Missouri_NetGain, "Rasters/Missouri_CropGain.tif")
+
+cMissouri_LUC<-crop(landUse, Missouri)
+Missouri_LUC<-mask(cMissouri_LUC, Missouri)
+
+writeRaster(Missouri_LUC, "Rasters/Missouri_LUC.tif")
+
+CropLoss <-project(netCropLoss, Missouri)
+
+cMissouri_NetLoss<-crop(CropLoss, Missouri)
+Missouri_NetLoss<-mask(cMissouri_NetLoss, Missouri)
+
+writeRaster(Missouri_NetLoss, "Rasters/Missouri_CropLoss.tif")
+
+cMissouri_GCAM_0_30 <- crop(GCAM0_30cm, Missouri)
+Missouri_GCAM_0_30 <- mask(cMissouri_GCAM_0_30, Missouri)
+
+writeRaster(Missouri_GCAM_0_30, "Rasters/Missouri_GCAM.tif")
+
+cMissouri_HWSD_0_30 <- crop(HWSD0_30cm, Missouri)
+Missouri_HWSD_0_30 <- mask(cMissouri_HWSD_0_30, Missouri)
+
+writeRaster(Missouri_HWSD_0_30, "Rasters/Missouri_HWSD.tif")
+
+cMissouri_FAO_0_30 <- crop(FAO_0_30cm, Missouri)
+Missouri_FAO_0_30 <- mask(cMissouri_FAO_0_30 , Missouri)
+
+writeRaster(Missouri_FAO_0_30, "Rasters/Missouri_FAO.tif")
+
+cMissouri_SG17_0_30 <- crop(SG17_0_30cm, Missouri)
+Missouri_SG17_0_30 <- mask(cMissouri_SG17_0_30, Missouri)
+writeRaster(Missouri_SG17_0_30, "Rasters/Missouri_SG17.tif")
+
+cMissouri_SG20_0_30 <- crop(SG20_0_30cm, Missouri)
+Missouri_SG20_0_30 <- mask(cMissouri_SG20_0_30, Missouri)
+writeRaster(Missouri_SG20_0_30, "Rasters/Missouri_SG20.tif")
+```
+
