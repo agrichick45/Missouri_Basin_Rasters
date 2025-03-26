@@ -51,7 +51,7 @@ There are several different rasters in this Missouri River Basin Analysis:
 ### Covariates and Sources
 
 - In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Grassland Estimates. 300 m x 300 m resolution.   
-- Cropland Land Use Change from 2000-2019, derived from [WRI]() Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
+- Cropland Land Use Change from 2000-2019, derived from [WRI](https://glad.umd.edu/dataset/croplands) Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
 
 
 
@@ -66,7 +66,7 @@ landUse<-rast("Reprojected_LandUseRaster_igh.tif")
 croplandROC<-rast("cropland_Reproj.tif")
 
 #Load in the Bond Lam Soil Heterotrophic Respiration
-bondLam<-rast("bondLamUnit_Reproj.tif" )
+#bondLam<-rast("bondLamUnit_Reproj.tif" )
 
 #Soil Climate Variables
 #https://onlinelibrary.wiley.com/doi/10.1111/gcb.16060 paper
