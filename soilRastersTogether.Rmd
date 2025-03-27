@@ -99,12 +99,14 @@ Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 
 ## Missouri Basin Rasters
 
-### Cropland Gains
-
+### Soil Carbon Rasters
 ```{r}
+SOC30cm_Stack<-c( Missouri_FAO, Missouri_GCAM, Missouri_HWSD, Missouri_SG17, Missouri_SG20) 
 
+names(SOC30cm_Stack) <- c(  "FAO Glosis 30 cm", "GCAM 30 cm", "HWSD 30 cm", "SoilGrids 2017 30 cm", "SoilGrids 2020 30 cm")
 
-plet(Missouri_crop_gain_84, main="Percent\n Cropland\n Added\n 2000-2019", col=map.pal("reds"), tiles="Streets") |> lines(MissouriSV, lwd=2)
+#https://rdrr.io/cran/terra/man/plet.html
+plet(SOC30cm_Stack, 1:5, main="Soil Carbon\n Content\n (Mha)", tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
 
 ```
 
@@ -117,23 +119,18 @@ plet(Missouri_LUC_84, main="Land Use\n Category, 2015", col=c("#FED439FF", "#075
 
 ```
 
-### Soil Carbon Rasters
+
+### Cropland Gains
+
 ```{r}
-SOC30cm_Stack<-c(Missouri_FAO, Missouri_GCAM, Missouri_HWSD, Missouri_SG17, Missouri_SG20) 
-
-names(SOC30cm_Stack) <- c( "FAO Glosis 30 cm", "GCAM 30 cm", "HWSD 30 cm", "SoilGrids 2017 30 cm", "SoilGrids 2020 30 cm")
-
-#https://rdrr.io/cran/terra/man/plet.html
-plet(SOC30cm_Stack, 1, tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
-
-plot(SOC30cm_Stack, 2:5)
 
 
-
-
+plet(Missouri_crop_gain_84, main="Percent\n Cropland\n Added\n 2000-2019", col=map.pal("reds"), tiles="Streets") |> lines(MissouriSV, lwd=2)
 
 ```
 
 
-#Respiration links https://daac.ornl.gov/CMS/guides/CMS_Global_Soil_Respiration.html
+
+
+
 
