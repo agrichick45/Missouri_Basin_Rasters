@@ -15,6 +15,8 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 # Introduction
 
+The objective of this webpage is to visualize and review the underlying raster data that informs the input data calibrated from the Missouri River basin ORISE project on GCAM with the EPA. There are 5 different soil carbon rasters that are utilized in the calculation of land use based emissions for both soil and vegetative carbon. One basin is focused on, as it has the largest percent growth in the United States 
+
 ## R Packages
 
 ```{r}
@@ -46,13 +48,12 @@ There are several different rasters in this Missouri River Basin Analysis:
 ### Vegetation Rasters
 
 - Initial GCAM Vegetation Estimates
-- Updated Vegetation Estimates [Spawn et al., 2020]() (Not used for this analysis)
-- Modis Derived GPP and NPP
 
 
 ### Covariates and Sources
 
 - In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Pasture Estimates. 300 m x 300 m resolution.   
+- Historic Land Use from 1700 from [Li et al., 2023](https://essd.copernicus.org/articles/15/1005/2023/)
 - Cropland Land Use Change from 2000-2019, derived from [WRI](https://glad.umd.edu/dataset/croplands) Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
 
 
@@ -64,6 +65,18 @@ MissouriSV<-vect("missouri_river_basin.shp")
 Missouri_LUC<-rast("Rasters/Missouri_LUC.tif")
 Missouri_LUC_84<-project(Missouri_LUC, 'EPSG:4326',  method = "near")
 levels(Missouri_LUC_84) <- data.frame(id=c(1,2,3,4, 5, 6, 8), cover=c("Cropland", "Forest", "Grassland",  "Shrubland", "Urban","Rock/Desert", "Pasture"))
+
+Hist_LUC<-rast("Rasters/conus_lulc_1700.tif")
+Hist_LULC<-project(Hist_LUC, 'EPSG:4326',  method = "near")
+Hist_LULC <- ifel(Hist_LULC == 0, 6, Hist_LULC)
+
+Missouri_Hist<-crop(Hist_LULC, MissouriSV)
+Miss_Hist_LULC<-mask(Missouri_Hist, MissouriSV) 
+
+levels(Miss_Hist_LULC)<-data.frame(id=c(4, 5, 6, 7, 8, 9), cover=c("Forest", "Shrubland", "Grassland", "Wetland", "Water", "Rock/Desert"))
+
+
+
 
 #Load in the WRI Land Use Cropland Change
 Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
@@ -93,6 +106,8 @@ Missouri_SG20<-project(SG20, 'EPSG:4326')
 Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 
 
+
+
 ```
 
 # Results
@@ -112,10 +127,19 @@ plet(SOC30cm_Stack, 1:5, main="Soil Carbon\n Content\n (Mha)", tiles="Streets", 
 
 ### Missouri River Land Use
 
+#### Historic 1700 Land Use Raster
+
+```{r}
+
+plet(Miss_Hist_LULC, main="Land Use\n Category, 1700", col=c( "#075149FF", "#F05C3BFF", "#46732EFF", "#192EC0FF", "#192EC0FF", "#8A9197FF"), tiles="Streets") |> lines(MissouriSV, lwd=2)
+
+```
+
+#### Present (2015) In House Derived Raster 
+
 ```{r}
 #https://rdrr.io/cran/terra/man/factors.html
 plet(Missouri_LUC_84, main="Land Use\n Category, 2015", col=c("#FED439FF", "#075149FF", "#46732EFF",  "#F05C3BFF", "#C80813FF", "#8A9197FF", "#FD8CC1FF"), tiles="Streets") |> lines(MissouriSV, lwd=2)
-
 
 ```
 
