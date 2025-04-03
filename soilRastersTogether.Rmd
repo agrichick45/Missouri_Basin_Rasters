@@ -13,11 +13,10 @@ output:
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
-# Introduction
+## Introduction
 
-The objective of this webpage is to visualize and review the underlying raster data that informs the input data calibrated from the Missouri River basin ORISE project on GCAM with the EPA. There are 5 different soil carbon rasters that are utilized in the calculation of land use based emissions for both soil and vegetative carbon. One basin is focused on, as it has the largest percent growth in the United States 
+The objective of this webpage is to visualize and review the underlying raster data that informs the input data calibrated from the Missouri River basin ORISE project on GCAM with the EPA. There are 5 different soil carbon rasters that are utilized in the calculation of land use based emissions for both soil and vegetative carbon. One basin is focused on, as it has the largest percent growth in the United States between 2020 and 2060, with a 5%+ growth in cropland with corresponding losses in unmanaged pasture. The five soil carbon rasters represent estimations in model based soil carbon. 
 
-## R Packages
 
 ```{r}
 #Load the required packages
@@ -33,31 +32,30 @@ library(leaflet)
 library(RColorBrewer)
 ```
 
-## Raster Sources
+## Materials and Methods
 
 There are several different rasters in this Missouri River Basin Analysis: 
 
 ### Soil Carbon Rasters: 30 cm
 
 - GCAM 30 cm estimate:  Original GCAM Estimates:  (recreated with the inital .csv file and the land use in house raster). The ratio of the 30 cm/100 cm HWSD raster was used to multiply with the 100 cm GCAM raster to calculate the approximate level of soil carbon at 30 cm level (for comparison)  
+- FAO Glosis 2018 Raster: From the [FAO Data](https://www.fao.org/soils-portal/data-hub/soil-maps-and-databases/global-soil-organic-carbon-map-gsocmap/en/), and is a fusion of many different sytles, with in country data, filled in with soilgrids 2017 for countries that provided no data.
 - Harmonized World Soils Database: The topsoil (30 cm) raster from the [Regridded Harmonized World Soil Database v1.2](https://daac.ornl.gov/SOILS/guides/HWSD.html). *Find Resolution*    
 - SoilGrids 2017 30 cm raster: Derived with random forest machine learning algorithms [Hengel et al., 2017](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169748), downloaded the 30 cm soil carbon stocks 250 m resoultion.   
-- FAO Glosis 2018 Raster: From the [FAO Data](https://www.fao.org/soils-portal/data-hub/soil-maps-and-databases/global-soil-organic-carbon-map-gsocmap/en/), and is a fusion of many different sytles, with in country data, filled in with soilgrids 2017 for countries that provided no data.  
 - SoilGrids 2020 30 cm raster: downloaded using the [WebDav Protocol](https://www.isric.org/explore/soilgrids/soilgrids-access)  
 
 ### Vegetation Rasters
 
-- Initial GCAM Vegetation Estimates
+- Initial GCAM Vegetation Estimates from the same Houghton Data, with the initial raster used to create the current vegetation estimates
 
 
-### Covariates and Sources
+### Land Use and Change Rasters
 
 - In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Pasture Estimates. 300 m x 300 m resolution.   
 - Historic Land Use from 1700 from [Li et al., 2023](https://essd.copernicus.org/articles/15/1005/2023/)
 - Cropland Land Use Change from 2000-2019, derived from [WRI](https://glad.umd.edu/dataset/croplands) Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
 
 
-## Shapefile Setup
 ```{r, results=FALSE}
 MissouriSV<-vect("missouri_river_basin.shp")
 
@@ -74,9 +72,6 @@ Missouri_Hist<-crop(Hist_LULC, MissouriSV)
 Miss_Hist_LULC<-mask(Missouri_Hist, MissouriSV) 
 
 levels(Miss_Hist_LULC)<-data.frame(id=c(4, 5, 6, 7, 8, 9), cover=c("Forest", "Shrubland", "Grassland", "Wetland", "Water", "Rock/Desert"))
-
-
-
 
 #Load in the WRI Land Use Cropland Change
 Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
@@ -110,9 +105,7 @@ Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 
 ```
 
-# Results
-
-## Missouri Basin Rasters
+## Results
 
 ### Soil Carbon Rasters
 ```{r}
@@ -124,6 +117,8 @@ names(SOC30cm_Stack) <- c(  "FAO Glosis 30 cm", "GCAM 30 cm", "HWSD 30 cm", "Soi
 plet(SOC30cm_Stack, 1:5, main="Soil Carbon\n Content\n (Mha)", tiles="Streets", share=TRUE, collapse=FALSE) |> lines(MissouriSV, lwd=2)
 
 ```
+
+
 
 ### Missouri River Land Use
 
