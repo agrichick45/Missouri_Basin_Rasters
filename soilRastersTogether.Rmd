@@ -30,6 +30,7 @@ library(rasterVis)
 library(ggplot2)
 library(leaflet)
 library(RColorBrewer)
+library(ncdf4) 
 ```
 
 ## Materials and Methods
@@ -72,6 +73,7 @@ Missouri_Hist<-crop(Hist_LULC, MissouriSV)
 Miss_Hist_LULC<-mask(Missouri_Hist, MissouriSV) 
 
 levels(Miss_Hist_LULC)<-data.frame(id=c(4, 5, 6, 7, 8, 9), cover=c("Forest", "Shrubland", "Grassland", "Wetland", "Water", "Rock/Desert"))
+
 
 #Load in the WRI Land Use Cropland Change
 Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
