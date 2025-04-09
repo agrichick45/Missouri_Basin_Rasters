@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 
 setGDALconfig("GDAL_NETCDF_BOTTOMUP", "no")
-LU_2060_netCD4<- rast("Rasters/GCAM_Demeter_LU_ssp5_rcp85_modelmean_2060.nc")
+LU_2060_netCD4<- rast("Rasters/GCAM_Demeter_LU_ssp4_rcp60_modelmean_2060.nc")
 
 names(LU_2060_netCD4) <- c("Water", "Needle Temperate Evergreen Tree", "Needle Boreal Evergreen Tree", "Needle Deciduous Boreal Evergreen Tree", "Broadleaf Tropical Evergreen Tree", "Broadleaf Temperate Evergreen Tree", "Broadleaf Tropical Deciduous Tree", "Broadleaf Temperate Deciduous Tree", "Broadleaf Boreal Deciduous Tree", "Temperate Evergreen Shrubland", "Temperate Deciduous Shrubland", "Boreal Deciduous Shrubland", "C3 Arctic Grassland", "C3 Grassland", "C4 Grassland", "Corn:rainfed", "Corn:irrigated", "Wheat: rainfed", "Wheat: irrigated", "Soybean: rainfed", "Soybean: irrigated", "Cotton: rainfed", "Cotton: irrigated", "Rice: rainfed", "Rice: irrigated", "Sugar crop: rainfed", "Sugar crop: irrigated", "Other crop: rainfed", "Other crop: irrigated", "Bioenergy crop: rainfed", "Bioenergy crop: irrigated", "Urban", "Barren")
 
@@ -39,11 +39,14 @@ for (f in filelist_temp){
   r <- rast(f)
   rot <- t(r)
   flip <- flip(rot, direction="h")
+  crs(flip)<-'EPSG:4326'
   raster_list[[f]] <-  flip
+  
 }
 
 
 Forest_SUM<-raster_list$`NETCDF/2.tif`+raster_list$`NETCDF/3.tif`+raster_list$`NETCDF/4.tif`+raster_list$`NETCDF/5.tif`+raster_list$`NETCDF/6.tif`+raster_list$`NETCDF/7.tif`+raster_list$`NETCDF/8.tif`+raster_list$`NETCDF/9.tif`
+
 
 Shrubland_SUM<-raster_list$`NETCDF/10.tif`+raster_list$`NETCDF/11.tif`+raster_list$`NETCDF/12.tif`
 
@@ -53,4 +56,40 @@ Urban_SUM<-raster_list$`NETCDF/32.tif`
 
 Barren_SUM<-raster_list$`NETCDF/33.tif`
 
-Cropland_SUM<-raster_list$`NETCDF/15.tif`+raster_list$`NETCDF/16.tif`+raster_list$`NETCDF/17.tif`+raster_list$`NETCDF/18.tif`+raster_list$`NETCDF/19.tif`+raster_list$`NETCDF/20.tif`+raster_list$`NETCDF/21.tif`+raster_list$`NETCDF/22.tif`+raster_list$`NETCDF/23.tif`+raster_list$`NETCDF/24.tif`+raster_list$`NETCDF/25.tif`+raster_list$`NETCDF/26.tif`+raster_list$`NETCDF/27.tif`+raster_list$`NETCDF/28.tif`+raster_list$`NETCDF/29.tif`+raster_list$`NETCDF/30.tif`+raster_list$`NETCDF/31.tif`
+Cropland_SUM<-raster_list$`NETCDF/16.tif`+raster_list$`NETCDF/17.tif`+raster_list$`NETCDF/18.tif`+raster_list$`NETCDF/19.tif`+raster_list$`NETCDF/20.tif`+raster_list$`NETCDF/21.tif`+raster_list$`NETCDF/22.tif`+raster_list$`NETCDF/23.tif`+raster_list$`NETCDF/24.tif`+raster_list$`NETCDF/25.tif`+raster_list$`NETCDF/26.tif`+raster_list$`NETCDF/27.tif`+raster_list$`NETCDF/28.tif`+raster_list$`NETCDF/29.tif`+raster_list$`NETCDF/30.tif`+raster_list$`NETCDF/31.tif`
+
+
+
+```
+
+```{r}
+states<-rast("Rasters/states_ssp460_2015-2100.nc")
+
+pasture_2060<-states[["pastr_46"]]
+range_2060<-states[["range_46"]]
+
+pasture_SUM<-pasture_2060+range_2060
+
+
+
+stack_2060_ssp4_rcp6.0<-c(Cropland_SUM, Forest_SUM, Shrubland_SUM, Urban_SUM, Barren_SUM)
+
+Past_2060_Proj<-project(pasture_SUM, stack_2060_ssp4_rcp6.0, method="near")
+
+Past_2060_Proj=Past_2060_Proj*100
+
+Grassland<-Grassland_SUM-Past_2060_Proj
+
+Grassland<-ifel(Grassland > 0, Grassland, 0)
+
+Stack_2060<-c(Cropland_SUM, Forest_SUM, Grassland, Shrubland_SUM, Urban_SUM, Barren_SUM, Past_2060_Proj)
+  
+names(Stack_2060)<-c("Cropland", "Forest", "Grassland", "Shrubland", "Urban", "RID", "Pasture")
+
+which_max_rast<-which.max(Stack_2060)
+
+names(which_max_rast)<-c("Cropland", "Forest", "Grassland", "Shrubland", "Urban", "RID", "Pasture")
+
+writeRaster(which_max_rast, "Rasters/2060_Land_Use.tif", overwrite=TRUE)
+
+max_val<-max(Stack_2060, na.rm=FALSE)

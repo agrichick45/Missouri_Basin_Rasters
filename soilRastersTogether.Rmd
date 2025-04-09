@@ -54,6 +54,7 @@ There are several different rasters in this Missouri River Basin Analysis:
 
 - In House Land Use Raster, based on the European Space Agency (ESA) and Ramunkutty Tundra and Pasture Estimates. 300 m x 300 m resolution.   
 - Historic Land Use from 1700 from [Li et al., 2023](https://essd.copernicus.org/articles/15/1005/2023/)
+- Future Land Use compilation (2060) from [Chen et al,. 2020](https://www.nature.com/articles/s41597-020-00669-x) mean model RCP6.0 SSP4 and the [Land Use Harmonization v2](https://luh.umd.edu/index.shtml) RCP6.0 SSP4 (from GCAM) described in [Hurtt et al., 2020](https://gmd.copernicus.org/articles/13/5425/2020/gmd-13-5425-2020-discussion.html) for the pasture and rangeland land use categories. Categories were totaled into the GCAM land use designations and filtered by most prominent. 
 - Cropland Land Use Change from 2000-2019, derived from [WRI](https://glad.umd.edu/dataset/croplands) Data. 3 km resolution, and the value is the % of land converted to cropland in that time period.  
 
 
@@ -74,6 +75,11 @@ Miss_Hist_LULC<-mask(Missouri_Hist, MissouriSV)
 
 levels(Miss_Hist_LULC)<-data.frame(id=c(4, 5, 6, 7, 8, 9), cover=c("Forest", "Shrubland", "Grassland", "Wetland", "Water", "Rock/Desert"))
 
+Miss_Future<-rast("Rasters/2060_Land_Use.tif")
+Missouri_fut<-crop(Miss_Future, MissouriSV)
+Miss_Fut_LULC<-mask(Missouri_fut, MissouriSV)
+
+levels(Miss_Fut_LULC) <- data.frame(id=c(1,2,3,4, 5, 7), cover=c("Cropland", "Forest", "Grassland",  "Shrubland", "Urban", "Pasture"))
 
 #Load in the WRI Land Use Cropland Change
 Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
@@ -110,6 +116,11 @@ Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 ## Results
 
 ### Soil Carbon Rasters
+
+#### 
+
+There are five different soil rasters that are important to this study presented. 
+
 ```{r}
 SOC30cm_Stack<-c( Missouri_FAO, Missouri_GCAM, Missouri_HWSD, Missouri_SG17, Missouri_SG20) 
 
@@ -137,6 +148,12 @@ plet(Miss_Hist_LULC, main="Land Use\n Category, 1700", col=c( "#075149FF", "#F05
 ```{r}
 #https://rdrr.io/cran/terra/man/factors.html
 plet(Missouri_LUC_84, main="Land Use\n Category, 2015", col=c("#FED439FF", "#075149FF", "#46732EFF",  "#F05C3BFF", "#C80813FF", "#8A9197FF", "#FD8CC1FF"), tiles="Streets") |> lines(MissouriSV, lwd=2)
+
+```
+
+#### Future (2060) Composite Derived Raster
+```{r}
+plet(Miss_Fut_LULC, main="Land Use\n Category, 2060", col=c("#FED439FF", "#075149FF", "#46732EFF",  "#F05C3BFF", "#C80813FF", "#FD8CC1FF"), tiles="Streets") |> lines(MissouriSV, lwd=2)
 
 ```
 
