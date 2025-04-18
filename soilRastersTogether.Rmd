@@ -61,6 +61,13 @@ There are several different rasters in this Missouri River Basin Analysis:
 ```{r, results=FALSE}
 MissouriSV<-vect("missouri_river_basin.shp")
 
+
+Miss_2020<-rast("Rasters/Global_LU_2020.tif")
+Miss_LUC_2020<-project(Miss_2020, 'EPSG:4326',  method = "near")
+levels(Miss_LUC_2020) <- data.frame(id=c(1,2,3,4, 5, 6, 7), cover=c("Cropland", "Forest", "Grassland",  "Shrubland", "Urban","Rock/Desert", "Pasture"))
+Missouri_2020<-crop(Miss_LUC_2020, MissouriSV)
+Miss_LULC<-mask(Missouri_2020, MissouriSV) 
+
 #Load in the In House Categorical Land Use Raster
 Missouri_LUC<-rast("Rasters/Missouri_LUC.tif")
 Missouri_LUC_84<-project(Missouri_LUC, 'EPSG:4326',  method = "near")
@@ -80,6 +87,7 @@ Missouri_fut<-crop(Miss_Future, MissouriSV)
 Miss_Fut_LULC<-mask(Missouri_fut, MissouriSV)
 
 levels(Miss_Fut_LULC) <- data.frame(id=c(1,2,3,4, 5, 7), cover=c("Cropland", "Forest", "Grassland",  "Shrubland", "Urban", "Pasture"))
+
 
 #Load in the WRI Land Use Cropland Change
 Missouri_crop_gain<-rast("Rasters/Missouri_CropGain.tif")
@@ -119,7 +127,7 @@ Missouri_SG20<-classify(Missouri_SG20, cbind(150, Inf, 150))
 
 #### 
 
-There are five different soil rasters that are important to this study presented. The intial GCAM dataset relied on a 100 cm version of Houghton, which this study standardized to a 30 cm depth to match the other rasters. 
+There are five different soil rasters that are important to this study presented. The intial GCAM dataset relied on a 100 cm version of Houghton, which this study standardized to a 30 cm depth to match the other rasters. The GCAM raster also utilized the 2015 land use map (below) to recreate a visual representation to match the other rasters.
 
 ```{r}
 SOC30cm_Stack<-c( Missouri_FAO, Missouri_GCAM, Missouri_HWSD, Missouri_SG17, Missouri_SG20) 
@@ -144,7 +152,8 @@ range<-range(SOC30cm_Stack)
 
 Half of the minimum values in the raster came from the FAO Glosis raster (~52%), with a majority of this area located in the western portion of the basin (an area compromizing the shrubland and short grass prairies converted into pasture). The HWSD was the minimum value in ~20% of the basin, in the area that mostly comprises the cropland area. The SoilGrids 2020 was the minimum raster value in ~18% of the basin, in the southern portion of the basin, as well as the Canadian portion of the basin. The SoilGrids 2017 values did not have any minimum raster values.
 
-The SoilGrids 2017 has ~58% of the maximum values in each grid cell, with almost all areas represented in the basin except the same southern portion of the basin that the SoilGrids 2020 was the maximum values (Kansas/Nebraska), which had the Houghton values as the maximum values for ~25% of the basin.
+The SoilGrids 2017 has ~58% of the maximum values in each grid cell, with almost all areas represented in the basin except the same southern portion of the basin that the SoilGrids 2020 was the maximum values (Kansas/Nebraska), which had the Houghton values as the maximum values for ~25% of the basin. The SoilGrids 2017 map also has the highest values in the western Woodlands (Bighorn National Forest, Custer, and Yellowstone).
+
 ### Missouri River Land Use
 
 #### Historic 1700 Land Use Raster
